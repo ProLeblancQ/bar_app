@@ -1,7 +1,7 @@
 <template>
   <header class="header">
     <nav class="nav-bar">
-      <!-- Dropdown catégories -->
+      <!-- Dropdown catégories (inchangé) -->
       <div class="auth-container">
         <button class="nav-btn" @click="toggleCategoryDropdown">Catégories</button>
 
@@ -18,141 +18,192 @@
           </ul>
           <p class="switch-auth" @click="clearCategory">Supprimer les filtres</p>
         </div>
-      </div>
+        <template v-if="authStore.isAuthenticated">
+          <span class="welcome-message">
+            Bienvenue à bord, {{ authStore.user?.name || 'Invité' }} !
+          </span>
 
-      <!-- Logo -->
+        </template>
+      </div>
+      
+      <!-- Logo (inchangé) -->
       <div class="logo-container">
         <img src="../assets/logo_bar_app_bgrm.png" alt="Bar-App Logo" class="logo" />
       </div>
 
-      <!-- Connexion / Inscription -->
+      <!-- NOUVEAU : Logique d'affichage conditionnel pour l'authentification -->
       <div class="auth-container">
-        <button class="nav-btn" @click="toggleDropdown">Se connecter</button>
+        <template v-if="authStore.isAuthenticated">
+          <button class="nav-btn logout-btn" @click="handleLogout">Déconnexion</button>
+        </template>
+        <template v-else>
+          <!-- Bouton de connexion/inscription si l'utilisateur n'est PAS connecté -->
+          <button class="nav-btn" @click="toggleDropdown">Se connecter</button>
 
-        <div v-if="showDropdown" class="dropdown">
-          <form @submit.prevent="isLogin ? handleLogin() : handleRegister()">
-            <input v-model="form.email" type="email" placeholder="Email" required />
-            <input v-model="form.password" type="password" placeholder="Mot de passe" required />
+          <div v-if="showDropdown" class="dropdown">
+            <form @submit.prevent="isLogin ? handleLogin() : handleRegister()">
+              <input v-if="!isLogin" v-model="form.name" type="text" placeholder="Nom" required />
+              <input v-model="form.email" type="email" placeholder="Email" required />
+              <input v-model="form.password" type="password" placeholder="Mot de passe" required />
 
-            <input
-              v-if="!isLogin"
-              v-model="form.confirmPassword"
-              type="password"
-              placeholder="Confirmer le mot de passe"
-              required
-            />
+              <input
+                v-if="!isLogin"
+                v-model="form.confirmPassword"
+                type="password"
+                placeholder="Confirmer le mot de passe"
+                required
+              />
 
-            <button type="submit">{{ isLogin ? 'Connexion' : 'Inscription' }}</button>
-          </form>
+              <button type="submit">{{ isLogin ? 'Connexion' : 'Inscription' }}</button>
+            </form>
 
-          <p class="switch-auth" @click="toggleAuthMode">
-            {{
-              isLogin ? 'Pas encore de compte ? Inscrivez-vous' : 'Déjà un compte ? Connectez-vous'
-            }}
-          </p>
-        </div>
+            <p class="switch-auth" @click="toggleAuthMode">
+              {{ isLogin ? 'Pas encore de compte ? Inscrivez-vous' : 'Déjà un compte ? Connectez-vous' }}
+            </p>
+          </div>
+        </template>
       </div>
     </nav>
   </header>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
-import type { Category } from '@/types'
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
+import { useAuthStore } from '@/stores/auth'; // <-- NOUVEAU : Importez votre store Pinia
 
-// Dropdown catégories
-const showCategoryDropdown = ref(false)
-const categories = ref<Category[]>([])
-const selectedCategory = ref<Category | null>(null)
+interface Category {
+  category_id: number;
+  name: string;
+}
+
+// NOUVEAU : Initialisez et utilisez le store Pinia
+const authStore = useAuthStore();
+
+const showCategoryDropdown = ref(false);
+const categories = ref<Category[]>([]);
+const selectedCategory = ref<Category | null>(null);
+
 const emit = defineEmits<{
-  (e: 'category-selected', category: Category | null): void
-}>()
+  (e: 'category-selected', category: Category | null): void;
+}>();
 
 const toggleCategoryDropdown = () => {
-  showCategoryDropdown.value = !showCategoryDropdown.value
-}
+  showCategoryDropdown.value = !showCategoryDropdown.value;
+};
 
 const selectCategory = (category: Category) => {
-  selectedCategory.value = category
-  emit('category-selected', category)
-  showCategoryDropdown.value = false
-}
+  console.log('HeaderBar: Catégorie sélectionnée, émission:', category);
+  selectedCategory.value = category;
+  emit('category-selected', category);
+  showCategoryDropdown.value = false;
+};
 
 const clearCategory = () => {
-  selectedCategory.value = null
-  emit('category-selected', null)
-  showCategoryDropdown.value = false
-}
+  console.log('HeaderBar: Suppression des filtres, émission:', null);
+  selectedCategory.value = null;
+  emit('category-selected', null);
+  showCategoryDropdown.value = false;
+};
 
-// Charger les catégories au montage
 onMounted(async () => {
   try {
-    const res = await axios.get('http://localhost:8080/api/categories')
-    categories.value = res.data
+    const res = await axios.get('http://localhost:8080/api/categories');
+    categories.value = res.data;
   } catch (error) {
-    console.error('Erreur chargement des catégories :', error)
+    console.error('Erreur chargement des catégories :', error);
   }
-})
+});
 
-// Dropdown connexion / inscription
-const showDropdown = ref(false)
-const isLogin = ref(true)
+const showDropdown = ref(false);
+const isLogin = ref(true);
 
 const form = ref({
+  name: '',
   email: '',
   password: '',
   confirmPassword: '',
-})
+});
 
 const toggleDropdown = () => {
-  showDropdown.value = !showDropdown.value
-}
+  showDropdown.value = !showDropdown.value;
+  // Optionnel : Réinitialiser les champs et le mode quand on ouvre/ferme
+  if (!showDropdown.value) { // Si on ferme le dropdown
+    form.value.name = '';
+    form.value.email = '';
+    form.value.password = '';
+    form.value.confirmPassword = '';
+    isLogin.value = true; // Revenir au mode connexion par défaut
+  }
+};
 
 const toggleAuthMode = () => {
-  isLogin.value = !isLogin.value
-}
+  isLogin.value = !isLogin.value;
+  form.value.name = '';
+  form.value.email = '';
+  form.value.password = '';
+  form.value.confirmPassword = '';
+};
 
+// NOUVEAU : Gestion de la connexion
 const handleLogin = async () => {
   try {
     const response = await axios.post('http://localhost:8080/api/auth/login', {
       email: form.value.email,
       password: form.value.password,
-    })
-    console.log('Login success:', response.data)
-    // TODO: gérer token / redirection
-  } catch (error) {
-    console.error('Erreur login:', error)
-  }
-}
+    });
+    console.log('Login success:', response.data);
 
+    const loggedInUser = {
+      id: response.data.user.id,
+      name: response.data.user.name,
+      email: response.data.user.email,
+      role: response.data.user.role
+    };
+
+    authStore.setUser(loggedInUser); // Stocke l'utilisateur dans Pinia
+    showDropdown.value = false; // Ferme le formulaire de connexion
+    alert('Connexion réussie !'); // Message de succès
+  } catch (error) {
+    console.error('Erreur login:', error);
+    alert('Erreur de connexion. Veuillez vérifier vos identifiants.'); // Message d'erreur
+  }
+};
+
+// NOUVEAU : Gestion de l'inscription
 const handleRegister = async () => {
   if (form.value.password !== form.value.confirmPassword) {
-    alert('Les mots de passe ne correspondent pas')
-    return
+    alert('Les mots de passe ne correspondent pas');
+    return;
   }
 
   try {
     const response = await axios.post('http://localhost:8080/api/auth/register', {
+      name: form.value.name,
       email: form.value.email,
       password: form.value.password,
-    })
-    console.log('Inscription réussie:', response.data)
-    isLogin.value = true
-    form.value.password = ''
-    form.value.confirmPassword = ''
+    });
+    console.log('Inscription réussie:', response.data);
+    alert('Inscription réussie ! Vous pouvez maintenant vous connecter.');
+    isLogin.value = true; // Revenir au mode connexion après inscription
+    form.value.password = '';
+    form.value.confirmPassword = '';
   } catch (error) {
-    console.error('Erreur inscription:', error)
+    console.error('Erreur inscription:', error);
+    alert('Erreur lors de l\'inscription. Cet email est peut-être déjà utilisé.');
   }
-}
+};
+
+// NOUVEAU : Gestion de la déconnexion
+const handleLogout = () => {
+  authStore.clearUser(); // Efface l'utilisateur du store Pinia
+  alert('Vous êtes déconnecté.');
+  // Optionnel : Redirection vers la page d'accueil ou autre (avec router.push('/'))
+};
 </script>
 
-
-
-
-
 <style scoped>
-
+/* Vos styles CSS existants */
 .header {
   position: fixed;
   top: 0;
@@ -173,7 +224,6 @@ const handleRegister = async () => {
   position: relative;
 }
 
-/* Boutons gauche/droite */
 .nav-btn {
   background: transparent;
   color: #ffc300;
@@ -205,8 +255,12 @@ const handleRegister = async () => {
   padding: 0.3rem;
 }
 
+/* MODIFIÉ : Pour aligner le message et le bouton de déconnexion */
 .auth-container {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espace entre les éléments */
 }
 
 .dropdown {
@@ -254,5 +308,35 @@ const handleRegister = async () => {
   cursor: pointer;
   font-size: 0.85rem;
   text-align: center;
+}
+
+.category-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+}
+
+.category-list li {
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
+.category-list li.selected {
+  background-color: #ffc300;
+  color: #111;
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+/* NOUVEAU : Style pour le message de bienvenue */
+.welcome-message {
+  color: #FBFAF7; /* Couleur du texte */
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-right: 15px; /* Pour espacer du bouton de déconnexion */
+}
+
+.logout-btn {
+  /* Pas de styles spécifiques par défaut, prendra les styles de .nav-btn */
 }
 </style>
