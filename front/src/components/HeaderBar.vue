@@ -1,6 +1,7 @@
 <template>
   <header class="header">
     <nav class="nav-bar">
+      <!-- Dropdown catégories -->
       <div class="auth-container">
         <button class="nav-btn" @click="toggleCategoryDropdown">Catégories</button>
 
@@ -18,11 +19,13 @@
           <p class="switch-auth" @click="clearCategory">Supprimer les filtres</p>
         </div>
       </div>
-        <div class="logo-container">
-          <img src="../assets/logo_bar_app_bgrm.png" alt="Bar-App Logo" class="logo" />
-        </div>
-      
 
+      <!-- Logo -->
+      <div class="logo-container">
+        <img src="../assets/logo_bar_app_bgrm.png" alt="Bar-App Logo" class="logo" />
+      </div>
+
+      <!-- Connexion / Inscription -->
       <div class="auth-container">
         <button class="nav-btn" @click="toggleDropdown">Se connecter</button>
 
@@ -31,7 +34,6 @@
             <input v-model="form.email" type="email" placeholder="Email" required />
             <input v-model="form.password" type="password" placeholder="Mot de passe" required />
 
-            <!-- Affiche le champ "confirmer mot de passe" en mode inscription -->
             <input
               v-if="!isLogin"
               v-model="form.confirmPassword"
@@ -55,16 +57,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref,onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import type { Category } from '@/types'
 
-const showDropdown = ref(false)
-const isLogin = ref(true)
-const emit = defineEmits(['category-selected'])
+// Dropdown catégories
 const showCategoryDropdown = ref(false)
 const categories = ref<Category[]>([])
 const selectedCategory = ref<Category | null>(null)
+const emit = defineEmits<{
+  (e: 'category-selected', category: Category | null): void
+}>()
 
 const toggleCategoryDropdown = () => {
   showCategoryDropdown.value = !showCategoryDropdown.value
@@ -82,6 +85,7 @@ const clearCategory = () => {
   showCategoryDropdown.value = false
 }
 
+// Charger les catégories au montage
 onMounted(async () => {
   try {
     const res = await axios.get('http://localhost:8080/api/categories')
@@ -90,6 +94,11 @@ onMounted(async () => {
     console.error('Erreur chargement des catégories :', error)
   }
 })
+
+// Dropdown connexion / inscription
+const showDropdown = ref(false)
+const isLogin = ref(true)
+
 const form = ref({
   email: '',
   password: '',
@@ -111,7 +120,7 @@ const handleLogin = async () => {
       password: form.value.password,
     })
     console.log('Login success:', response.data)
-    // Ajoute ici la logique de redirection ou stockage du token
+    // TODO: gérer token / redirection
   } catch (error) {
     console.error('Erreur login:', error)
   }
@@ -137,6 +146,10 @@ const handleRegister = async () => {
   }
 }
 </script>
+
+
+
+
 
 <style scoped>
 

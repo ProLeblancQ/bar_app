@@ -7,11 +7,12 @@
           <p class="product-description">{{ product.description }}</p>
         </div>
         <div class="image-container">
-          <img :src="product.image" :alt="product.name" />
+          <img :src="product.imageUrl" :alt="product.name" />
         </div>
       </div>
       <div class="bottom-bar">
-        <p class="product-price">{{ formatPrice(product.price) }}</p>
+        <!-- Si tu n'as pas le prix, tu peux supprimer cette ligne ou l’adapter -->
+        <p class="product-price">{{ formatPrice(product.price || 0) }}</p>
         <button class="add-to-cart-btn">Ajouter</button>
       </div>
     </div>
@@ -19,47 +20,29 @@
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
   name: 'CardCocktail',
   data() {
     return {
-      products: [
-        {
-          id: 1,
-          name: 'Chaussures de sport',
-          description: 'Chaussures confortables pour la course.',
-          price: 9.99,
-          image: 'https://via.placeholder.com/120x120?text=Chaussures',
-        },
-        {
-          id: 2,
-          name: 'Montre élégante',
-          description: 'Montre avec bracelet en cuir.',
-          price: 12,
-          image: 'https://via.placeholder.com/120x120?text=Montre',
-        },
-        {
-          id: 3,
-          name: 'Sac à dos',
-          description: 'Sac à dos robuste et spacieux.',
-          price: 7.5,
-          image: 'https://via.placeholder.com/120x120?text=Sac+%C3%A0+dos',
-        },
-        {
-          id: 3,
-          name: 'Sac à dos',
-          description: 'Sac à dos robuste et spacieux.',
-          price: 7.5,
-          image: 'https://via.placeholder.com/120x120?text=Sac+%C3%A0+dos',
-        },
-      ],
+      products: []
     }
   },
   methods: {
     formatPrice(price) {
       return price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
-    },
+    }
   },
+  mounted() {
+    axios.get('http://localhost:8080/api/cocktails')
+      .then(response => {
+        this.products = response.data
+      })
+      .catch(error => {
+        console.error('Erreur lors de la récupération des cocktails:', error)
+      })
+  }
 }
 </script>
 
