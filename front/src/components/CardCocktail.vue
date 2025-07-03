@@ -2,7 +2,8 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
-import CreateProductModal from './CreateProductModal.vue' // <-- Importez le nouveau modal
+import { useCartStore } from '@/stores/cart' // <-- NOUVEAU : Importez le store du panier
+import CreateProductModal from './CreateProductModal.vue'
 
 interface Product {
   id: number
@@ -23,26 +24,28 @@ const props = defineProps({
 
 const products = ref<Product[]>([])
 const authStore = useAuthStore()
+const cartStore = useCartStore() // <-- NOUVEAU : Initialisez le store du panier
 
 const isAdmin = computed(() => {
   return authStore.isAuthenticated && authStore.user?.role === 'admin'
 })
 
+// NOUVEAU : Vérifier si l'utilisateur est connecté et NON admin
+const isUser = computed(() => {
+  return authStore.isAuthenticated && authStore.user?.role !== 'admin'
+})
+
 const emit = defineEmits(['edit-product', 'delete-product'])
 
-// --- NOUVEAUX ÉTATS ET FONCTIONS POUR LE MODAL DE CRÉATION ---
-const isCreateModalVisible = ref(false) // Contrôle la visibilité du modal de création
+const isCreateModalVisible = ref(false)
 
 const openCreateModal = () => {
   isCreateModalVisible.value = true
 }
 
 const handleProductCreated = (newProduct: Product) => {
-  // Ajoutez le nouveau produit à la liste actuelle et rafraîchissez
-  // products.value.push(newProduct); // Option simple mais ne tient pas compte du tri/filtrage
-  fetchProducts(props.categoryId) // Recharger tous les produits pour s'assurer que la liste est à jour
+  fetchProducts(props.categoryId)
 }
-// --- FIN NOUVEAUX ÉTATS ET FONCTIONS POUR LE MODAL DE CRÉATION ---
 
 const handleEditProduct = (product: Product) => {
   console.log(`CardCocktail - Éditer produit ID: ${product.id}`)
@@ -54,6 +57,12 @@ const handleDeleteProduct = (productId: number) => {
     console.log(`CardCocktail - Supprimer produit ID: ${productId}`)
     emit('delete-product', productId)
   }
+}
+
+// NOUVEAU : Fonction pour ajouter un produit au panier
+const addToCart = (product: Product) => {
+  cartStore.addProduct(product)
+  alert(`"${product.name}" ajouté au panier !`)
 }
 
 const fetchProducts = async (categoryId: number | null) => {
@@ -125,7 +134,16 @@ watch(
         </div>
         <div class="bottom-bar">
           <p class="product-price">{{ formatPrice(product.price || 0) }}</p>
-          <button class="add-to-cart-btn">Ajouter</button>
+          <button
+            class="add-to-cart-btn"
+            @click="addToCart(product)"
+            v-if="isUser"
+          >
+            Ajouter
+          </button>
+          <button class="add-to-cart-btn" v-else>
+            Ajouter
+          </button>
         </div>
       </div>
 
