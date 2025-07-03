@@ -93,11 +93,11 @@ const saveChanges = async () => {
           <input type="text" id="imageUrl" v-model="editedProduct.imageUrl" />
         </div>
         <div class="form-group">
-          <label for="price">Prix (si directement modifiable sur le cocktail):</label>
+          <label for="price">Prix :</label>
           <input type="number" id="price" v-model="editedProduct.price" step="0.01" />
         </div>
         <div class="form-group">
-          <label for="categoryId">ID de la Catégorie:</label>
+          <label for="categoryId">Catégorie:</label>
           <input type="number" id="categoryId" v-model="editedProduct.categoryId" />
         </div>
 
