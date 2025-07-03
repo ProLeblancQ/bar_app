@@ -2,28 +2,24 @@
 import { ref, watch } from 'vue'
 import axios from 'axios'
 
-// Define the Product interface here or import it from a shared type file
 interface Product {
   id: number
   name: string
   description: string
   imageUrl: string
-  price?: number // Assuming price is directly on cocktail for simplicity in modal
-  categoryId?: number // Added categoryId for consistency with MCD
+  price?: number
+  categoryId?: number
 }
 
-// Define props that the modal expects
 const props = defineProps<{
-  isVisible: boolean // Controls modal visibility (used with v-model:isVisible)
-  productToEdit: Product | null // The product object to be edited, or null
+  isVisible: boolean
+  productToEdit: Product | null
 }>()
 
-// Define events the modal can emit
 const emit = defineEmits(['update:isVisible', 'product-updated'])
 
-// Reactive state for the form fields, initialized from productToEdit prop
 const editedProduct = ref<Product>({
-  id: 0, // Default for a new/non-existent product
+  id: 0,
   name: '',
   description: '',
   imageUrl: '',
@@ -31,16 +27,18 @@ const editedProduct = ref<Product>({
   categoryId: 0,
 })
 
-// Watch for changes in productToEdit prop to populate the form
-watch(() => props.productToEdit, (newProduct) => {
-  if (newProduct) {
-    // Deep copy the product to avoid directly modifying the prop
-    editedProduct.value = { ...newProduct }
-  }
-}, { immediate: true }) // Run immediately on component mount if productToEdit is already set
+watch(
+  () => props.productToEdit,
+  (newProduct) => {
+    if (newProduct) {
+      editedProduct.value = { ...newProduct }
+    }
+  },
+  { immediate: true }
+)
 
 const closeModal = () => {
-  emit('update:isVisible', false) // Emit event to close the modal (works with v-model:isVisible)
+  emit('update:isVisible', false)
 }
 
 const saveChanges = async () => {
@@ -52,33 +50,26 @@ const saveChanges = async () => {
       return
     }
 
-    // Prepare data for the API call based on your MCD
-    // For simplicity, we're assuming one PUT endpoint for the cocktail that can update
-    // name, description, image_url, category_id.
-    // If 'price' needs a separate update (e.g., in `cocktail_prices` table),
-    // you'd need another API call or a more complex backend endpoint.
     const dataToSend = {
       name: editedProduct.value.name,
       description: editedProduct.value.description,
       imageUrl: editedProduct.value.imageUrl,
       categoryId: editedProduct.value.categoryId,
-      // If your backend handles price update via the /cocktails/{id} endpoint:
-      price: editedProduct.value.price, 
+      price: editedProduct.value.price,
     }
 
-    // API call to update the product
-    // Adjust the URL and method based on your Spring Boot API
     const response = await axios.put(`http://localhost:8080/api/cocktails/${productId}`, dataToSend)
-    
+
     console.log('Product updated successfully:', response.data)
     alert('Produit mis à jour avec succès !')
-    
-    // Emit the updated product data back to the parent so it can refresh its list
-    emit('product-updated', response.data) 
-    closeModal() // Close the modal after successful update
+
+    emit('product-updated', response.data)
+    closeModal()
   } catch (error: any) {
     console.error('Error updating product:', error.response?.data || error.message)
-    alert('Erreur lors de la mise à jour du produit: ' + (error.response?.data?.message || error.message))
+    alert(
+      'Erreur lors de la mise à jour du produit: ' + (error.response?.data?.message || error.message)
+    )
   }
 }
 </script>
@@ -109,7 +100,7 @@ const saveChanges = async () => {
           <label for="categoryId">ID de la Catégorie:</label>
           <input type="number" id="categoryId" v-model="editedProduct.categoryId" />
         </div>
-        
+
         <button type="submit" class="save-btn">Enregistrer les modifications</button>
       </form>
     </div>
@@ -128,18 +119,18 @@ const saveChanges = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Ensure it's above everything else */
+  z-index: 1000;
 }
 
 .modal-content {
-  background-color: #1a1a1a; /* Dark background for the modal */
+  background-color: #1a1a1a;
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
   width: 90%;
   max-width: 500px;
   position: relative;
-  color: #FBFAF7; /* Light text color */
+  color: #fbfaf7;
 }
 
 .close-btn {
@@ -176,20 +167,20 @@ h2 {
   color: #f9ac37;
 }
 
-.form-group input[type="text"],
-.form-group input[type="number"],
+.form-group input[type='text'],
+.form-group input[type='number'],
 .form-group textarea {
-  width: calc(100% - 20px); /* Adjust for padding */
+  width: calc(100% - 20px);
   padding: 10px;
   border: 1px solid #444;
   border-radius: 5px;
-  background-color: #2a2a2a; /* Slightly lighter dark input background */
-  color: #FBFAF7;
+  background-color: #2a2a2a;
+  color: #fbfaf7;
   font-size: 1rem;
 }
 
 .form-group textarea {
-  resize: vertical; /* Allow vertical resizing */
+  resize: vertical;
   min-height: 80px;
 }
 
